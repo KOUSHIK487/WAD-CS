@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Gallery</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    max-width: 600px;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+input[type="file"] {
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #5c6bc0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #3949ab;
+}
+
+#gallery {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#gallery img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+#gallery .image-container {
+    position: relative;
+    display: inline-block;
+}
+
+#gallery .delete-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 14px;
+}
+
+#logout-btn {
+    margin-top: 20px;
+    background-color: #e57373;
+}
+
+/* Login button style update */
+#login-form button {
+    display: block;   /* Makes the button take up the full line */
+    margin: 20px auto; /* Centers the button horizontally */
+}
+</style>
+<body>
+
+    <div class="container">
+        <h2>Upload Your Photos</h2>
+        
+        <!-- Login Form -->
+        <div id="login-section">
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Upload Form and Gallery (hidden initially) -->
+        <div id="user-section" style="display: none;">
+            <h3>Welcome, <span id="user-name"></span>!</h3>
+
+            <!-- Image Upload Form -->
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" id="image" name="image" accept="image/*" required>
+                <button type="submit">Upload Image</button>
+            </form>
+
+            <!-- Display Uploaded Images -->
+            <div id="gallery">
+                <!-- Uploaded images will appear here -->
+            </div>
+
+            <button id="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Dummy "database" of users stored in localStorage
+        const users = [
+            { username: 'vu22csen0100533', password: 'password123' },
+            { username: 'user1', password: 'mypassword' }
+        ];
+
+        // Check if the user is logged in already
+        window.onload = function() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                showUserSection(loggedInUser);
+            }
+        };
+
+        // Handle login
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Check if user credentials match
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                localStorage.setItem('loggedInUser', username);
+                showUserSection(username);
+            } else {
+                alert('Invalid username or password');
+            }
+        });
+
+        // Show the user section after login
+        function showUserSection(username) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('user-section').style.display = 'block';
+            document.getElementById('user-name').textContent = username;
+            loadImages();
+        }
+
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            localStorage.removeItem('loggedInUser');
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('user-section').style.display = 'none';
+            
+            // Clear the password field
+            document.getElementById('password').value = '';
+            
+            // Clear the file input field
+            document.getElementById('image').value = '';  // This clears the selected file
+        });
+
+        // Handle image upload
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('image');
+            const file = fileInput.files[0];
+
+            if (file) {
+                // Simulate saving the image (you could save it on the server)
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Save image URL to localStorage (you can replace this with server-side storage)
+                    const images = JSON.parse(localStorage.getItem('images')) || [];
+                    images.push(e.target.result);
+                    localStorage.setItem('images', JSON.stringify(images));
+                    loadImages();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Load images from localStorage and display in gallery
+        function loadImages() {
+            const images = JSON.parse(localStorage.getItem('images')) || [];
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            images.forEach((imageSrc, index) => {
+                // Create a container for each image and its delete button
+                const imageContainer = document.createElement('div');
+                imageContainer.classList.add('image-container');
+
+                const img = document.createElement('img');
+                img.src = imageSrc;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'X';
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.onclick = function() {
+                    deleteImage(index);
+                };
+
+                imageContainer.appendChild(img);
+                imageContainer.appendChild(deleteBtn);
+                gallery.appendChild(imageContainer);
+            });
+        }
+
+        // Delete image from localStorage and gallery
+        function deleteImage(index) {
+            const images = JSON.parse(localStorage.getItem('images')) || [];
+            images.splice(index, 1); // Remove the image at the specified index
+            localStorage.setItem('images', JSON.stringify(images));
+            loadImages(); // Reload the gallery
+        }
+    </script>
+</body>
+</html>
